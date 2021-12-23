@@ -1,0 +1,10 @@
+#goal definition
+float64 X
+float64 Y
+float64 yaw
+---
+#result definition
+float64[] sequence
+---
+#feedback definition
+int32 feedbackID
