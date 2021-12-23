@@ -11,3 +11,5 @@ Instructions:
 In the last command three parameters (floats) have to be given for the code to work as intended.
 The first two parameters are the coordinates, expressed in meters with respect to the map frame, of the point that the robot has to reach.
 The third parameter is  the angle of rotation around the z-axis, expressed in radians, where the 0 corresponds to the direction of the x-axis in the map frame.
+
+To make the laser_geometry package work, we had to modify the file opt/ros/melodic/include/laser_geometry/laser_geometry.h by substituting "#include <Eigen/Core>" with "#include <eigen3/Eigen/Core>"
