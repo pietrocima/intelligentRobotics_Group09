@@ -18,6 +18,8 @@ find_package(catkin REQUIRED COMPONENTS
     laser_geometry
     tf2
     tf
+    gazebo_ros
+    message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -61,11 +63,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  Objs.srv
+)
+
 
 ## Generate actions in the 'action' folder
 add_action_files(
@@ -123,6 +125,7 @@ catkin_package(
      laser_geometry
      tf2
      tf
+     message_runtime
 #  DEPENDS system_lib
 )
 
@@ -140,9 +143,14 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/tiago_iaslab_simulation.cpp
-# )
+add_library(${PROJECT_NAME}_human
+  src/Human.cpp
+)
+target_link_libraries(
+  ${PROJECT_NAME}_human
+  ${catkin_LIBRARIES}
+)
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -163,6 +171,7 @@ include_directories(
 add_executable(moveTiago_client src/navigation_client.cpp)
 add_executable(moveTiago_server src/navigation_server.cpp)
 
+add_executable(human_node src/Human_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -195,6 +204,12 @@ add_dependencies(moveTiago_server tiago_iaslab_simulation_generate_messages_cpp)
 
 target_link_libraries(moveTiago_client ${catkin_LIBRARIES})
 target_link_libraries(moveTiago_server ${catkin_LIBRARIES})
+
+target_link_libraries(
+  human_node
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}_human
+)
 
 #############
 ## Install ##
