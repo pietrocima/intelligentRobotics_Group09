@@ -1,0 +1,8 @@
+#goal definition
+int32 go
+---
+#result definition
+geometry_msgs/Pose[] detectedObjs
+---
+#feedback definition
+int32 feedback

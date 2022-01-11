@@ -14,10 +14,14 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     actionlib
     actionlib_msgs
+    control_msgs
     sensor_msgs
+    geometry_msgs
     laser_geometry
     tf2
     tf
+    moveit_ros_planning_interface
+    apriltag_ros
     gazebo_ros
     message_generation
 )
@@ -56,11 +60,13 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  DIRECTORY 
+  msg
+  FILES
+  posesObjs.msg
+#  Message2.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -72,7 +78,7 @@ add_service_files(
 ## Generate actions in the 'action' folder
 add_action_files(
    DIRECTORY action
-   FILES MoveTiago.action
+   FILES MoveTiago.action Detection.action PickPlace.action
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -81,6 +87,8 @@ generate_messages(
   std_msgs          # Or other packages containing msgs
   actionlib_msgs
   move_base_msgs
+  control_msgs
+  geometry_msgs
   sensor_msgs
  )
 ##############################################
@@ -122,7 +130,11 @@ catkin_package(
      move_base_msgs
      actionlib_msgs
      sensor_msgs
+     control_msgs
      laser_geometry
+     geometry_msgs
+     moveit_ros_planning_interface
+     apriltag_ros
      tf2
      tf
      message_runtime
@@ -138,8 +150,8 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
- include
-    ${catkin_INCLUDE_DIRS}
+  include
+  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -171,7 +183,15 @@ target_link_libraries(
 add_executable(moveTiago_client src/navigation_client.cpp)
 add_executable(moveTiago_server src/navigation_server.cpp)
 
+add_executable(moveArm src/MoveArm.cpp)
+add_executable(nodeC_pickplace src/nodeC_pickplace.cpp)
+
+add_executable(nodeA src/nodeA.cpp)
+add_executable(nodeB_Detection src/nodeB_Detection.cpp)
+add_executable(nodeC_moveArm src/nodeC_moveArm.cpp)
+
 add_executable(human_node src/Human_node.cpp)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -186,6 +206,13 @@ add_executable(human_node src/Human_node.cpp)
 add_dependencies(moveTiago_client tiago_iaslab_simulation_generate_messages_cpp)
 add_dependencies(moveTiago_server tiago_iaslab_simulation_generate_messages_cpp)
 
+add_dependencies(nodeA tiago_iaslab_simulation_generate_messages_cpp)
+
+add_dependencies(nodeB_Detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+add_dependencies(nodeC_moveArm ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+
+add_dependencies(moveArm ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
+add_dependencies(nodeC_pickplace ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -197,13 +224,18 @@ add_dependencies(moveTiago_server tiago_iaslab_simulation_generate_messages_cpp)
 #   ${catkin_LIBRARIES}
 # )
 
-   #target_link_libraries(example_a ${catkin_LIBRARIES})
-   #target_link_libraries(example_b ${catkin_LIBRARIES})
 
 
 
 target_link_libraries(moveTiago_client ${catkin_LIBRARIES})
 target_link_libraries(moveTiago_server ${catkin_LIBRARIES})
+
+target_link_libraries(nodeA ${catkin_LIBRARIES})
+target_link_libraries(nodeB_Detection ${catkin_LIBRARIES})
+target_link_libraries(nodeC_moveArm ${catkin_LIBRARIES})
+
+target_link_libraries(moveArm ${catkin_LIBRARIES})
+target_link_libraries(nodeC_pickplace ${catkin_LIBRARIES})
 
 target_link_libraries(
   human_node
