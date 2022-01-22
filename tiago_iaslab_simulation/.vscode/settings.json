@@ -79,5 +79,6 @@
         "typeinfo": "cpp",
         "core": "cpp",
         "*.ipp": "cpp"
-    }
+    },
+    "editor.insertSpaces": false
 }

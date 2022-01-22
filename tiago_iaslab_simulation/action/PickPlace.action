@@ -1,9 +1,10 @@
 #goal definition
 geometry_msgs/Pose[] detectedObjs
-int32 type
+int32 ObjType           # 1 = blue, 2 = green, 3 = red
+int32 actionType        #can be pick = 0, place = 1;
 ---
 #result definition
-int32 done
+bool actionCompleted
 ---
 #feedback definition
 int32 feedback

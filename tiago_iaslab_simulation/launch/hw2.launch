@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+<node name ="human_node" pkg="tiago_iaslab_simulation" type="human_node"/>
+<node name ="nodeB_Detection" pkg="tiago_iaslab_simulation" type="nodeB_Detection"/>
+<node name ="nodeC_moveArm" pkg="tiago_iaslab_simulation" type="nodeC_moveArm"/>
+<node name ="moveTiago_server" pkg="tiago_iaslab_simulation" type="moveTiago_server"/>
+<node name ="nodeA" pkg="tiago_iaslab_simulation" type="nodeA"/>
+</launch>

@@ -2,7 +2,6 @@
 #include <actionlib/client/simple_action_client.h>
 
 #include <tiago_iaslab_simulation/MoveTiagoAction.h>
-#include <tiago_iaslab_simulation/MoveTiagoActionFeedback.h>
 #include <tiago_iaslab_simulation/PickPlaceAction.h>
 #include <tiago_iaslab_simulation/DetectionAction.h>
 
@@ -12,28 +11,23 @@
 #include <cstdlib>
 
 
-/*
-#   This node retrive the ID of the object to pick and define the corrsepondent position goal to send to the motionServer.
-#   
-*/
 
-int getObjID(){
-    int obj_id;
+std::vector<int> getObjID(){
+    std::vector<int> obj_ids;
     ros::NodeHandle n;
 	ros::ServiceClient client =
 	n.serviceClient<tiago_iaslab_simulation::Objs>("/human_objects_srv");
 	tiago_iaslab_simulation::Objs srv;
+
 	srv.request.ready = true;
+	srv.request.all_objs = true;
     if (client.call(srv)) { 
-        obj_id = (int)(srv.response.ids.at(0));
-        ROS_INFO("Object ID: %i", obj_id); 
-        srv.request.ready = false;
+        obj_ids = (srv.response.ids);
     } else { 
         ROS_ERROR("Failed to call service human request");
-        return 1; 
     }  
     
-    return obj_id;
+    return obj_ids;
 }
 
 
@@ -42,131 +36,157 @@ int main(int argc, char* argv[]){
     actionlib::SimpleActionClient<tiago_iaslab_simulation::MoveTiagoAction> moveClient("moveTiagoServer", true);
     actionlib::SimpleActionClient<tiago_iaslab_simulation::DetectionAction> detectionClient("nodeB_detectionServer", true);
     actionlib::SimpleActionClient<tiago_iaslab_simulation::PickPlaceAction> pickPlaceClient("nodeC_PickPlaceServer", true);
-
-
     
-    ROS_INFO("Waiting for servers to start.");
+    ROS_INFO("Waiting for servers.");
 
     moveClient.waitForServer(); 
-    ROS_INFO("Action server started, sending goal.");
     float posX, posY, yaw;
     
-    int obj_id = getObjID();
+    std::vector<int> obj_ids = getObjID();
 
-    switch (obj_id)
-    {
-        case 1: //BLU
-            posX = 8.00 ;
-            posY = -2.10;
-            yaw = -1.57;
-            break;
-        case 2: //GREEN
-            posX = 7.8;
-            posY = -4.20;
-            yaw = 1.57;
-            break;
-        case 3: //RED
-            posX = 7.50 ;
-            posY = -2.10;
-            yaw = -1.57;
-            break;
-    }
+	for(int i = 0; i < obj_ids.size(); i ++){
+		int obj_id = obj_ids.at(i);
 
-    //Define the goal specifying the X and Y coordinates and Yaw angle.
-    tiago_iaslab_simulation::MoveTiagoGoal PosGoal;  
-    PosGoal.X = posX;
-    PosGoal.Y = posY;
-    PosGoal.yaw = yaw;
+		switch (obj_id){
+			case 1: //BLU
+				ROS_INFO("OBJECT SELECTED: BLUE HEXAGON");
+				posX = 8.00;								 
+				posY = -1.90;									
+				yaw = -1.40;
+				break;
+			case 2: //GREEN
+				ROS_INFO("OBJECT SELECTED: GREEN TRIANGLE");
+				posX = 7.8;
+				posY = -4.15;								
+				yaw = M_PI_2;
+				break;
+			case 3: //RED
+				ROS_INFO("OBJECT SELECTED: RED CUBE");
+				posX = 7.50 ;
+				posY = -1.85;
+				yaw = -1.40;
+				break;
+		}
 
-    //Send the goal to the server
-    moveClient.sendGoal(PosGoal);
+		//Define the pick position of the robot specifying the X and Y coordinates and Yaw angle.
+		tiago_iaslab_simulation::MoveTiagoGoal PosGoal;  
+		PosGoal.X = posX;
+		PosGoal.Y = posY;
+		PosGoal.yaw = yaw;
 
-    //Feedback management
-    /*
-    int fb = 0;
-    boost::shared_ptr<const tiago_iaslab_simulation::MoveTiagoActionFeedback> feedbackMsg;
-    while(fb!= 3 && fb!= 4){
-        feedbackMsg = ros::topic::waitForMessage<tiago_iaslab_simulation::MoveTiagoActionFeedback>("/moveTiagoServer/feedback");
-        fb = feedbackMsg->feedback.feedbackID;
-        switch(fb){
-            case 1 :   
-                ROS_INFO("Info from server: ROBOT IS MOVING ");
-                break;
-            case 2 :
-                ROS_INFO("Info from server: ROBOT HAS REACHED FINAL POSITION");
-                ROS_INFO("Info from server: COMPUTING OBSTACLES COORDINATES");
-                break;
-            case 3 :
-                ROS_INFO("Info from server: TASK COMPLETED");
-                break;
-            case 4 :
-                ROS_INFO("Info from server: CANNOT REACH POSITION");
-                break;       
-        }
-    }
-    */
-    //Wait for the result for 120 second
-    bool finished = moveClient.waitForResult(ros::Duration(120.0));
-   
-    if(finished){
-        //Get the result 
-        ROS_INFO("REACHED POSITION");
-
-        //OBJECTS DETECTION  
-        detectionClient.waitForServer();
-        tiago_iaslab_simulation::DetectionGoal detGoal;
-        detGoal.go = 1;
-        detectionClient.sendGoal(detGoal);
-        
-        bool finishedDetection = detectionClient.waitForResult(ros::Duration(120.0));
-   
-        if(finishedDetection){
-            //Get the result, a poses vector of the detected objects
-            tiago_iaslab_simulation::DetectionResultConstPtr result_ = detectionClient.getResult();
-
-            /*
-            ros::NodeHandle n;
-            ros::Publisher pub = n.advertise<tiago_iaslab_simulation::posesObjs>("posesMessage",1000);
-            ros::Rate loop_rate(10);
-            while (ros::ok())
-            {
-                   tiago_iaslab_simulation::posesObjs poses;
-                   poses.detectedObjs = result_->detectedObjs;
-                   pub.publish(poses);
-                   ros::spinOnce();
-                   loop_rate.sleep();
-            } 
-            */
-
-            
-            //PICK ACTION   
-            pickPlaceClient.waitForServer();
-            tiago_iaslab_simulation::PickPlaceGoal pickPlaceGoal;
-            pickPlaceGoal.detectedObjs = result_->detectedObjs;
-            pickPlaceGoal.type = obj_id;
-            pickPlaceClient.sendGoal(pickPlaceGoal);
-
-            bool finishedPick = pickPlaceClient.waitForResult(ros::Duration(120.0));
-            if(finishedDetection){
-                ROS_INFO("SUCCESFUL OBJECT PICK");
-            }
-
-        } else{
-            ROS_INFO("Detection did not finish before the time out.");
-        }
+		//Define intermediate position before pick table
+		tiago_iaslab_simulation::MoveTiagoGoal waypointPickPosGoal;  
+		waypointPickPosGoal.X = 8.0;
+		waypointPickPosGoal.Y = 0.0;
+		waypointPickPosGoal.yaw = -M_PI_2;
 
 
+		//Send the waypointGoal to the server
+		moveClient.sendGoal(waypointPickPosGoal);
+		if (!moveClient.waitForResult(ros::Duration(120.0))){
+			ROS_ERROR("CANNOT MOVE TO FIRST WAYPOINT");
+			return 1;
+		}
+		ROS_INFO("REACHED FIRST WAYPOINT");
+		
+
+		//Send the pick position goal to the server
+		moveClient.sendGoal(PosGoal);;
+		if(!moveClient.waitForResult(ros::Duration(120.0))){
+			ROS_ERROR("CANNOT MOVE TO PICK POINT");
+			return 1;
+		}
+		ROS_INFO("REACHED PICK POINT");
+
+		//OBJECTS DETECTION
+		detectionClient.waitForServer();
+		tiago_iaslab_simulation::DetectionGoal detGoal;
+		detGoal.go = 1;
+		detectionClient.sendGoal(detGoal);
+
+		if (!detectionClient.waitForResult(ros::Duration(120.0))){
+			ROS_INFO("Detection did not finish before the time out.");
+			return 1;
+		}
+		//Get the detection result, a poses' vector of the detected objects. In position 0 there is the target object pose
+		tiago_iaslab_simulation::DetectionResultConstPtr result_detection = detectionClient.getResult();
+
+		//PICK ACTION
+		pickPlaceClient.waitForServer();
+		int pick = 0;
+		tiago_iaslab_simulation::PickPlaceGoal pickPlaceGoal;
+		pickPlaceGoal.detectedObjs = result_detection->detectedObjs;
+		pickPlaceGoal.ObjType = obj_id;
+		pickPlaceGoal.actionType = pick;
+		pickPlaceClient.sendGoal(pickPlaceGoal);
+
+		if (!pickPlaceClient.waitForResult(ros::Duration(180.0))){
+			ROS_ERROR("OBJECT NOT PICKED BEFORE TUMEOUT.");
+			return 1;
+		}else if (pickPlaceClient.getState() == actionlib::SimpleClientGoalState::ABORTED){
+			ROS_ERROR("PICK FAILED");
+			return 1;
+		}
+
+		ROS_INFO("OBJECT PICKED.");
+
+		//GOAL POSITION IN FRONT OF PLACE TABLE
+		tiago_iaslab_simulation::MoveTiagoGoal placePosGoal;
+		switch (obj_id){
+			case 1: //BLU
+				posX = 12.50;
+				break;
+			case 2: //GREEN
+				posX = 11.50;
+				break;
+			case 3: //RED
+				posX = 10.50;
+				break;
+		}
+
+		placePosGoal.X = posX;
+		placePosGoal.Y = 0.500;         
+		placePosGoal.yaw = -M_PI_2;    
+
+		// Define waypoint for the place postion.
+		tiago_iaslab_simulation::MoveTiagoGoal waypointPlacePosGoal;
+		waypointPlacePosGoal.X = 9.0;
+		waypointPlacePosGoal.Y = 0.5;
+		waypointPlacePosGoal.yaw = 0;
+
+		//Send the waypointGoal to the move server
+		moveClient.sendGoal(waypointPlacePosGoal);
+		if (!moveClient.waitForResult(ros::Duration(120.0))){
+			ROS_ERROR("CANNOT MOVE TO SECOND WAYPOINT");
+			return 1;
+		}
+		ROS_INFO("REACHED PLACE WAYPOINT");
+
+		//Send the placeGoal to the move erver
+		moveClient.sendGoal(placePosGoal);
+		if (!moveClient.waitForResult(ros::Duration(120.0))){
+			ROS_ERROR("CANNOT MOVE TO PLACE POINT");
+			return 1;
+		}
+		ROS_INFO("REACHED PLACE POSITION");
+
+		//PLACE ACTION
+		int place = 1;
+		pickPlaceGoal.detectedObjs = result_detection->detectedObjs;
+		pickPlaceGoal.actionType = place;
+		pickPlaceClient.sendGoal(pickPlaceGoal);
+		if (!pickPlaceClient.waitForResult(ros::Duration(120.0))){
+			ROS_INFO("OBJECT NOT PLACED BEFORE TIMEOUT");
+		}else if (pickPlaceClient.getState() == actionlib::SimpleClientGoalState::ABORTED){
+			ROS_ERROR("PLACE FAILED");
+			return 1;
+		}
+		
+		ROS_INFO("OBJECT PLACED SUCCESFULLY");
+	}
 
 
-        
-    } else{
-        ROS_INFO("Movement did not finish before the time out.");
-    }
-
-
-
-
-
-    return 0;
-
+	ROS_INFO("ALL OBJECTS PLACED SUCCESSFULLY");
+	
+	return 0;
 }

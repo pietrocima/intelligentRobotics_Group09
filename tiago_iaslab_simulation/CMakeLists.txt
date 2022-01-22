@@ -23,12 +23,12 @@ find_package(catkin REQUIRED COMPONENTS
     moveit_ros_planning_interface
     apriltag_ros
     gazebo_ros
+    gazebo_ros_link_attacher
     message_generation
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -60,13 +60,12 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  DIRECTORY 
-  msg
-  FILES
-  posesObjs.msg
-#  Message2.msg
-)
+##add_message_files(
+#  DIRECTORY 
+#  msg
+#  FILES
+#  msg1.msg
+#)
 
 ## Generate services in the 'srv' folder
 add_service_files(
@@ -153,7 +152,6 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
 )
-
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_human
   src/Human.cpp
@@ -178,13 +176,8 @@ target_link_libraries(
     #add_executable(example_a src/example_a.cpp)
     #add_executable(example_b src/example_b.cpp)
 
-
-
 add_executable(moveTiago_client src/navigation_client.cpp)
 add_executable(moveTiago_server src/navigation_server.cpp)
-
-add_executable(moveArm src/MoveArm.cpp)
-add_executable(nodeC_pickplace src/nodeC_pickplace.cpp)
 
 add_executable(nodeA src/nodeA.cpp)
 add_executable(nodeB_Detection src/nodeB_Detection.cpp)
@@ -207,12 +200,9 @@ add_dependencies(moveTiago_client tiago_iaslab_simulation_generate_messages_cpp)
 add_dependencies(moveTiago_server tiago_iaslab_simulation_generate_messages_cpp)
 
 add_dependencies(nodeA tiago_iaslab_simulation_generate_messages_cpp)
-
 add_dependencies(nodeB_Detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
 add_dependencies(nodeC_moveArm ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
 
-add_dependencies(moveArm ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
-add_dependencies(nodeC_pickplace ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} )
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -234,8 +224,6 @@ target_link_libraries(nodeA ${catkin_LIBRARIES})
 target_link_libraries(nodeB_Detection ${catkin_LIBRARIES})
 target_link_libraries(nodeC_moveArm ${catkin_LIBRARIES})
 
-target_link_libraries(moveArm ${catkin_LIBRARIES})
-target_link_libraries(nodeC_pickplace ${catkin_LIBRARIES})
 
 target_link_libraries(
   human_node
